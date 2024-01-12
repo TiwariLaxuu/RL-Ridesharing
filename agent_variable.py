@@ -15,7 +15,18 @@ from dqn import ReplayMemory, DQN
 from q_mixer import QMixer
 import matplotlib.pyplot as plt
 import copy 
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter() 
 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+
+file_handler = logging.FileHandler('BatchData1.log')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 Transition = namedtuple('Transition',
                         ('state', 'action', 'reward'))
@@ -94,7 +105,6 @@ class Agent:
         eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
             math.exp(-1. * self.steps_done / self.eps_decay)
             
-        print(eps_threshold)
 
         self.steps_done += 1
         
@@ -187,7 +197,7 @@ class Agent:
             
             if self.training:
                 self.memory.push(state, action, torch.tensor(reward, device = self.device, dtype=torch.float).unsqueeze(0))  
-                self.optimize_model()
+                self.optimize_model(episode)
                 
                 self.plot_durations(self.mode)
                 self.plot_loss_history(self.mode)
@@ -211,10 +221,10 @@ class Agent:
             
         print("Average duration was ", duration_sum/self.num_episodes)
         print("Finished")  
-        np.save("Duration_matrix", self.duration_matrix)
-        np.save("Count_matrix" , self.count_matrix)
-        print(self.duration_matrix)
-        print(self.count_matrix)
+        # np.save("Duration_matrix", self.duration_matrix)
+        # np.save("Count_matrix" , self.count_matrix)
+        # print(self.duration_matrix)
+        # print(self.count_matrix)
             
     def reset(self):
         
@@ -247,7 +257,7 @@ class Agent:
         self.grid_map.init_zero_map_cost()
 
         
-    def optimize_model(self):
+    def optimize_model(self, episode):
         if len(self.memory) < self.batch_size:
             return
         
@@ -268,7 +278,6 @@ class Agent:
         # Compute the expected Q values
         expected_state_action_values = reward_batch
         
-
         # Compute Huber loss
         if self.mode == "dqn":
             loss = F.smooth_l1_loss(state_action_values, expected_state_action_values)
@@ -278,7 +287,7 @@ class Agent:
             loss = F.smooth_l1_loss(chosen_action_qvals, reward_batch.view(-1, 1, 1))
             #loss = F.mse_loss(chosen_action_qvals, reward_batch.view(-1, 1, 1))
 
-
+        writer.add_scalar("Episode/loss", episode, loss.item())
         self.loss_history.append(loss.item())
 
         # Optimize the model
@@ -288,6 +297,13 @@ class Agent:
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
+        #logging all the info in log file 
+        # logger.info(f'EPisode:: {episode}')
+        # logger.info(f'state_batch:: {state_batch}')
+        # logger.info(f'action_batch:: {action_batch}')
+        # logger.info(f'reward_batch:: {reward_batch}')
+        # logger.info(f'state_action_values:: {state_action_values}')
+        logger.info(f'loss:: {loss}')
 
 
     def plot_durations(self, filename):
@@ -307,6 +323,7 @@ class Agent:
             for i in range(N-window_size):
                 window_steps = total_steps[i:i+window_size]
                 total_steps_smoothed[i] = np.average(window_steps)
+                
 
         plt.title('Episode Duration history')
         plt.xlabel('Episode')
@@ -314,7 +331,7 @@ class Agent:
 
         plt.plot(total_steps_smoothed)
         np.save("Duration_"+filename, total_steps_smoothed)
-        #plt.savefig("Durations_history_" + filename)
+        plt.savefig("Durations_history_" + filename)
         
     def plot_loss_history(self, filename):
         print("Saving loss history ...")
@@ -335,23 +352,22 @@ class Agent:
                 window_steps = total_loss[i:i+window_size]
                 total_loss_smoothed[i] = np.average(window_steps)
 
-
         plt.title('Loss history')
         plt.xlabel('Episodes')
         plt.ylabel('Loss')
         plt.plot(self.loss_history)
         np.save("Loss_"+filename, total_loss_smoothed)
-        #plt.savefig("Loss_history_" + filename)
+        plt.savefig("Loss_history_" + filename)
 
 if __name__ == '__main__':
     init_cars = 2
-    init_passengers = 7
-    max_cars = 20
-    max_passengers = 20
+    init_passengers = 3
+    max_cars = 5
+    max_passengers = 5
     
     
     
-    grid_map = GridMap(1, (500,500), init_cars, init_passengers)
+    grid_map = GridMap(1, (5,5), init_cars, init_passengers)
     cars = grid_map.cars
     passengers = grid_map.passengers
     env = Environment(grid_map)
@@ -364,10 +380,10 @@ if __name__ == '__main__':
     load_file = None
     #greedy, random, dqn, qmix
     agent = Agent(env, input_size, output_size, hidden_size, max_cars=max_cars, max_passengers = max_passengers, 
-                  load_file = load_file, lr=0.001, mix_hidden = 64, batch_size=128, eps_decay = 20000, num_episodes=1000, 
+                  load_file = load_file, lr=0.001, mix_hidden = 64, batch_size=4, eps_decay = 20, num_episodes=200, 
                   mode = "dqn", training = True)
     agent.train()
-    
+    writer.flush()
     # qmix= np.load("Duration_matrix_qmix.npy")
     # greedy = np.load("Duration_matrix_greedy.npy")
     # random = np.load("Duration_matrix_random.npy")
