@@ -105,4 +105,10 @@ All the passangers have been served.
 
 For now, there is no passenger will be generated during the episode. (We can test more complicated senario later 
 
+## Purpose Algorithm QMIX
+QMIX provides centralized training with decentralized execution. QMIX employs a network that estimates joint action-values as a complex non-linear combination of per-agent values that condition only on local observations. 
  
+## Huber loss function is used 
+![Alt text](Huber_loss.png)
+After Training loss plot 
+![Alt text](Loss_plot.png)
