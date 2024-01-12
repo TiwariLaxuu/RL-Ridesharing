@@ -38,7 +38,7 @@ Code for EECS 545: Machine Learning Project
 
 
 
-<!---
+
 # Feature Representation
 
 In order to reduce the action space, so the action now is a pair decision for one car, meaning we need an indicator to point out which car we are pairing now.
@@ -104,4 +104,5 @@ Uniformly generate cars and passangers on the map.
 All the passangers have been served.
 
 For now, there is no passenger will be generated during the episode. (We can test more complicated senario later 
--->
+
+ 
