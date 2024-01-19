@@ -1,4 +1,13 @@
 #from algorithm import PairAlgorithm
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+
+file_handler = logging.FileHandler('Env.log')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 class Environment:
 
@@ -41,8 +50,17 @@ class Environment:
                     pick_up_path = grid_map.plan_path(car.position, passenger.pick_up_point)
                     drop_off_path = grid_map.plan_path(passenger.pick_up_point, passenger.drop_off_point)
                     car.assign_path(pick_up_path, drop_off_path)
-                    print('Car after Pick off ')
+                    print('Car after pairing ')
                     print(car)
+                    print(passenger)
+                    logger.info(f'Car after PAIRING')
+                    logger.info(f'CAR: {car}')
+                    logger.info(f'Passenger: {passenger}')
+                    # logger.info(f'Car id: {car.id}, status: {car.status},passenger id: {car.passenger}')
+                    # logger.info(f'passenger id: {passenger.id}, status: {passenger.status}')
+                    logger.info(f'-------------------------------------------------------------')
+                    print('------------------------------------------------------------------')
+                
                     
             
 
@@ -54,12 +72,26 @@ class Environment:
                 # init require step
                 if car.required_steps is None:  # init
                     car.required_steps = self.grid_map.map_cost[(car.position, car.path[0])]
-
                 # pick up or drop off will take one step
                 if car.status == 'picking_up' and car.position == car.passenger.pick_up_point: # picking up
                     car.pick_passenger()
+                    print('Picking UP off ')
+                    print(car)
+                    print(passenger)
+                    print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+                    logger.info(f'Picking UP OFF ')
+                    logger.info(f'CAR: {car}')
+                    logger.info(f'Passenger: {passenger}')
                 elif car.status == 'dropping_off' and car.position == car.passenger.drop_off_point:  # dropping off
                     car.drop_passenger()
+                    print('Dropping off ')
+                    print(car)
+                    print(passenger)
+                    print('***********************************************************')
+                    logger.info(f'Dropping OFF ')
+                    logger.info(f'CAR: {car}')
+                    logger.info(f'Passenger: {passenger}')
+                    
                 else:
                     # try to move
                     if car.required_steps > 0:  # decrease steps
