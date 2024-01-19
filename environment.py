@@ -41,6 +41,8 @@ class Environment:
                     pick_up_path = grid_map.plan_path(car.position, passenger.pick_up_point)
                     drop_off_path = grid_map.plan_path(passenger.pick_up_point, passenger.drop_off_point)
                     car.assign_path(pick_up_path, drop_off_path)
+                    print('Car after Pick off ')
+                    print(car)
                     
             
 
